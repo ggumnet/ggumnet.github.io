@@ -1,16 +1,16 @@
-<header class="g-header">
-    <div class="g-logo">
-      <a href="{{ "/" | relative_url }}"></a>
-    </div>
-    <!-- <i id="menu-toggle" class="iconfont icon-menu"></i> -->
-    <svg id="menu-toggle" class="icon-menu" aria-hidden="true">
-        <use xlink:href="#icon-menu"></use>
-    </svg>
-    <nav class="g-nav">
-        <ul>
-            {% for i in site.nav %}
-            <li><a href="{{ i[1] | relative_url}}">{{ i[0] }}</a></li>
-            {% endfor %}
-        </ul>
-    </nav>
-</header>
+ <div class="header {% if site.header == "large" %}header--large{% endif %}">
+     <div class="container">
+         <h1 class="logo"><a href="/">{{ site.title }}</a></h1>
+         <nav class="nav-collapse">
+             <ul class="noList">
+                 {%- for link in site.navigation -%}{%- assign current = nil -%}{%- if page.url contains link.url or forloop.first and page.url == '/' or page.url == 'index.html' -%}{%- assign current = 'current' -%}{%- endif -%}
+                 <li class="element {%- if forloop.first -%}first{%- endif -%} {{ current }} {%- if forloop.last -%}last{%- endif -%}">
+                     <a href="{{ link.url }}">{{ link.title }}</a>
+                 </li> 
+                 {%- endfor -%}
+                 <li> <a href="https://github.com/brianmaierjr/long-haul" target="_blank">GitHub</a></li>
+                 <li><a href="https://github.com/brianmaierjr/long-haul/archive/master.zip">Download Theme</a></li>
+             </ul>
+         </nav>
+     </div>
+ </div><!-- end .header -->

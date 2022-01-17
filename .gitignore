@@ -1,11 +1,7 @@
-.DS_Store
-*/.DS_Store
-
-node_modules
-package-lock.json
-Gemfile.lock
-.jekyll-cache
-
 _site
-
-*.gem
+.sass-cache
+.DS_Store
+.ruby-version
+node_modules
+.jekyll-cache/
+.jekyll-cache/*

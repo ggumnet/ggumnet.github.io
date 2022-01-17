@@ -1,40 +1,69 @@
-var gulp = require('gulp'),
-    concat = require('gulp-concat'), //合并css文件
-    uglify = require('gulp-uglify'), // 压缩js文件
-    sass = require('gulp-sass')(require('node-sass')), // 编译sass
-    cleanCSS = require('gulp-clean-css'), // 压缩css文件
-    rename = require('gulp-rename'); // 文件重命名
+var gulp        = require('gulp');
+var browserSync = require('browser-sync');
+var sass        = require('gulp-sass');
+var prefix      = require('gulp-autoprefixer');
+var cp          = require('child_process');
+var cssnano 		= require('gulp-cssnano');
 
-gulp.task('scripts', (cb) => {
-    gulp.src('dev/js/index.js')
-        .pipe(uglify())
-        .pipe(rename({suffix: '.min'}))
-        .pipe(gulp.dest('assets/js'));
-    cb();
+var jekyll   = process.platform === 'win32' ? 'jekyll.bat' : 'jekyll';
+var messages = {
+    jekyllBuild: '<span style="color: grey">Running:</span> $ jekyll build'
+};
+
+/**
+ * Build the Jekyll Site
+ */
+gulp.task('jekyll-build', function (done) {
+    browserSync.notify(messages.jekyllBuild);
+    return cp.spawn( jekyll , ['build'], {stdio: 'inherit'})
+        .on('close', done);
 });
 
-gulp.task('sass', (cb) => {
-    gulp.src('dev/sass/app.scss')
-        .pipe(sass())
-        .pipe(gulp.dest('dev/sass'))
-        .pipe(cleanCSS())
-        .pipe(rename({suffix: '.min'}))
+/**
+ * Rebuild Jekyll & do page reload
+ */
+gulp.task('jekyll-rebuild', ['jekyll-build'], function () {
+    browserSync.reload();
+});
+
+/**
+ * Wait for jekyll-build, then launch the Server
+ */
+gulp.task('browser-sync', ['sass', 'jekyll-build'], function() {
+    browserSync({
+        server: {
+            baseDir: '_site'
+        }
+    });
+});
+
+/**
+ * Compile files from _scss into both _site/css (for live injecting) and site (for future jekyll builds)
+ */
+gulp.task('sass', function () {
+    return gulp.src('assets/scss/style.scss')
+        .pipe(sass({
+            includePaths: ['scss'],
+            onError: browserSync.notify
+        }))
+        .pipe(prefix(['last 3 versions'], { cascade: true }))
+				.pipe(cssnano())
+        .pipe(gulp.dest('_site/assets/css'))
+        .pipe(browserSync.reload({stream:true}))
         .pipe(gulp.dest('assets/css'));
-    cb();
 });
 
-gulp.task('css', (cb) => {
-    gulp.src(['dev/sass/prism.css', 'dev/sass/github-markdown.css', 'dev/sass/share.min.css'])
-        .pipe(concat('plugins.min.css'))
-        .pipe(cleanCSS())
-        .pipe(gulp.dest('assets/css'));
-    cb();
+/**
+ * Watch scss files for changes & recompile
+ * Watch html/md files, run jekyll & reload BrowserSync
+ */
+gulp.task('watch', function () {
+    gulp.watch(['assets/scss/*.scss', 'assets/scss/*/*.scss'], ['sass']);
+    gulp.watch(['*.html', '_layouts/*.html', '_posts/*'], ['jekyll-rebuild']);
 });
 
-gulp.task('watch', function() {
-    gulp.watch('dev/sass/*.scss', gulp.series('sass'));
-    gulp.watch('dev/sass/*.css', gulp.series("css"));
-    gulp.watch('dev/js/*.js', gulp.series("scripts"));
-});
-
-gulp.task('default', gulp.series('scripts', 'sass', 'css', 'watch'));
+/**
+ * Default task, running just `gulp` will compile the sass,
+ * compile the jekyll site, launch BrowserSync & watch files.
+ */
+gulp.task('default', ['browser-sync', 'watch']);
